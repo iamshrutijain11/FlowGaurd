@@ -27,7 +27,7 @@ export default function Dashboard(){
       {g.error&&<ErrorBox msg={g.error} onRetry={g.reload}/>}
       {g.loading&&!g.data&&<div className="grid gap-4 md:grid-cols-2"><Skeleton className="h-44"/><Skeleton className="h-44"/></div>}
       {g.data&&!list.length&&<div className="glass p-10 text-center"><Icon n="inbox" className="mx-auto h-10 w-10 text-mute"/><p className="mt-3 font-semibold">{t("emptyTitle")}</p><p className="mx-auto mt-1 max-w-sm text-sm text-mute">{t("emptyBody")}</p><Link href="/grievances/new" className="btn-primary mt-5"><Icon n="plus"/>{t("newGrievance")}</Link></div>}
-      <motion.div variants={wrap} initial="hidden" animate="show" className="grid gap-4 md:grid-cols-2">{list.map((x:Grievance)=>{const w=x.warnings?.some(w=>w.type==="POTENTIAL_DELAY");const d=daysSince(x.status_updated_at);
+      <motion.div variants={wrap} initial="hidden" animate="show" className="grid gap-4 md:grid-cols-2">{list.map((x:Grievance)=>{const w=(x.warning?.type==="POTENTIAL_DELAY")||x.warnings?.some(w=>w.type==="POTENTIAL_DELAY");const d=daysSince(x.status_updated_at);
         return <motion.div key={x.id} variants={item}><Link href={`/grievances/${x.id}`} className={`glass glass-hover block p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${w?"border-amber-400/40":""}`}>
           <div className="flex items-start justify-between gap-2"><div><p className="font-bold">{x.complaint_id}</p><p className="text-sm text-mute">{x.entity_name}</p></div>
             {w&&<Chip tone="warn" icon="alert">{t("delayed")}</Chip>}</div>

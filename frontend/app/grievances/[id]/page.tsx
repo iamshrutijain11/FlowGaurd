@@ -10,7 +10,7 @@ export default function Detail(){
   const [modal,setModal]=useState<"guide"|"evidence"|null>(null);const [busy,setBusy]=useState(false);const [done,setDone]=useState(false);
   if(g.error)return <ErrorBox msg={g.error} onRetry={g.reload}/>;
   if(!g.data)return <div className="space-y-4"><Skeleton className="h-52"/><Skeleton className="h-32"/><div className="grid gap-4 lg:grid-cols-5"><Skeleton className="h-64 lg:col-span-3"/><Skeleton className="h-64 lg:col-span-2"/></div></div>;
-  const x=g.data;const docs=dc.data??[];const events=ev.data??[];const warn=x.warnings?.find(w=>w.type==="POTENTIAL_DELAY");const d=daysSince(x.status_updated_at);
+  const x=g.data;const docs=dc.data??[];const events=ev.data??[];const warn=(x.warning&&x.warning.type==="POTENTIAL_DELAY"?x.warning:undefined)??x.warnings?.find(w=>w.type==="POTENTIAL_DELAY");const d=daysSince(x.status_updated_at);
   async function complete(){setBusy(true);try{await markNextActionCompleted(id);setDone(true);toast(t("doneToast"));ev.reload();}catch(e){toast((e as Error).message,"bad");}finally{setBusy(false);}}
   return <div className="space-y-6">
     <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-mute hover:text-ink"><span className="rotate-180"><Icon n="arrow"/></span>{t("backToDash")}</Link>
@@ -30,12 +30,24 @@ export default function Detail(){
       <div className="space-y-6 lg:col-span-2">
         {dc.error?<ErrorBox msg={dc.error} onRetry={dc.reload}/>:dc.loading&&!dc.data?<Skeleton className="h-40"/>:<DocumentList docs={docs}/>}
         {ev.error?<ErrorBox msg={ev.error} onRetry={ev.reload}/>:ev.loading&&!ev.data?<Skeleton className="h-64"/>:<Timeline events={events}/>}</div></div>
-    <Modal open={modal==="guide"} onClose={()=>setModal(null)} title={t("guidanceTitle")}>{na.data&&<div className="space-y-4">
-      <div><Chip tone="info" icon="cog">{t("suggestedAction")}</Chip><p className="mt-2 font-semibold">{na.data.title}</p><p className="text-sm text-ink/80">{na.data.description}</p></div>
-      <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] p-3"><Chip tone="ok" icon="shield">{t("verifiedGuidance")}</Chip>
-        {na.data.official_source?(/^https?:\/\//.test(na.data.official_source)?<a href={na.data.official_source} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-emerald-300 hover:underline"><Icon n="link"/>{t("officialLink")}</a>:<p className="mt-2 text-sm">{na.data.official_source}</p>):<p className="mt-2 text-sm text-mute">{t("noSource")}</p>}</div></div>}</Modal>
+    <Modal open={modal==="guide"} onClose={()=>setModal(null)} title={t("guidanceTitle")}>{na.data&&(()=>{
+      const src = typeof na.data.official_source === "string" ? na.data.official_source : (na.data.official_source ? JSON.stringify(na.data.official_source) : "");
+      const match = src.match(/https?:\/\/[^\s)]+/);
+      const url = match ? match[0] : null;
+      return <div className="space-y-4">
+        <div><Chip tone="info" icon="cog">{t("suggestedAction")}</Chip><p className="mt-2 font-semibold">{typeof na.data.title === "string" ? na.data.title : JSON.stringify(na.data.title)}</p><p className="text-sm text-ink/80">{typeof na.data.description === "string" ? na.data.description : JSON.stringify(na.data.description)}</p></div>
+        <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] p-3"><Chip tone="ok" icon="shield">{t("verifiedGuidance")}</Chip>
+          {src?(url?<a href={url} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-emerald-300 hover:underline"><Icon n="link"/>{src.length > 50 && !src.startsWith("http") ? src : t("officialLink")}</a>:<p className="mt-2 text-sm">{src}</p>):<p className="mt-2 text-sm text-mute">{t("noSource")}</p>}</div></div>;
+    })()}</Modal>
     <Modal open={modal==="evidence"} onClose={()=>setModal(null)} title={t("evidenceTitle")}><div className="space-y-4">
-      {na.data&&<ul className="space-y-2">{na.data.required_documents.map(r=>{const ok=isAvailable(r,docs);return <li key={r} className="flex items-center justify-between gap-3 text-sm"><span>{r}</span><Chip tone={ok?"ok":"neutral"} icon={ok?"check":undefined}>{ok?t("haveIt"):t("notYet")}</Chip></li>;})}</ul>}
+      {na.data&&(()=>{
+        const raw = Array.isArray(na.data.required_documents) ? na.data.required_documents : na.data.required_documents ? [na.data.required_documents] : [];
+        return <ul className="space-y-2">{raw.map((item, idx)=>{
+          const r = typeof item === "string" ? item : (typeof item === "object" && item !== null ? ((item as any).name || (item as any).title || JSON.stringify(item)) : String(item));
+          const ok=isAvailable(r,docs);
+          return <li key={`${r}-${idx}`} className="flex items-center justify-between gap-3 text-sm"><span>{r}</span><Chip tone={ok?"ok":"neutral"} icon={ok?"check":undefined}>{ok?t("haveIt"):t("notYet")}</Chip></li>;
+        })}</ul>;
+      })()}
       <div><p className="mb-2 text-xs text-mute">{t("yourFiles")}</p>{docs.length?<ul className="space-y-1 text-sm">{docs.map(dd=><li key={dd.id} className="flex items-center gap-2"><Icon n="file" className="h-4 w-4 text-indigo-300"/>{dd.file_name}</li>)}</ul>:<p className="text-sm text-mute">{t("noDocs")}</p>}</div>
       <p className="text-xs text-mute">{t("usefulInfo")}</p></div></Modal>
   </div>;

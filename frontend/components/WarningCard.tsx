@@ -10,6 +10,6 @@ export default function WarningCard({w,events}:{w:Warning;events:GEvent[]}){
       <div className="mt-3 space-y-2 rounded-xl border border-white/10 bg-black/20 p-4 text-sm">
         {w.reason&&<p>{w.reason}</p>}
         {ev&&<p className="text-mute">{t("basedOn")}: <span className="text-ink">{ev.description}</span> ({fmtDate(ev.event_time,lang)})</p>}
-        <p className="flex flex-wrap gap-3 text-xs text-mute">{w.rule_id&&<span>{t("rule")}: {w.rule_id}</span>}{w.triggered_at&&<span>{t("triggeredOn")}: {fmtDate(w.triggered_at,lang)}</span>}</p></div></motion.div>}</AnimatePresence>
+        <p className="flex flex-wrap gap-3 text-xs text-mute">{(w.rule||w.rule_id)&&<span>{t("rule")}: {w.rule||w.rule_id}</span>}{w.triggered_at&&<span>{t("triggeredOn")}: {fmtDate(w.triggered_at,lang)}</span>}</p></div></motion.div>}</AnimatePresence>
   </motion.section>;
 }

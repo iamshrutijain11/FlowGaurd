@@ -1,6 +1,6 @@
 export type Stage="FILED"|"ACKNOWLEDGED"|"AWAITING_RESPONSE"|"RESPONSE_RECEIVED"|"RESOLVED"|"FURTHER_ACTION";
-export interface Warning{type:"POTENTIAL_DELAY"|"MISSING_INFORMATION"|"FOLLOW_UP_DUE"|"DOCUMENT_REQUIRED"|"NO_RECENT_UPDATE";severity:string;rule_id?:string;reason?:string;triggered_at?:string;based_on_event?:string}
-export interface Grievance{id:string;complaint_id:string;entity_name:string;issue_type:string;issue_description:string;submission_date:string;current_stage:Stage;status_updated_at:string;created_at:string;updated_at:string;warnings?:Warning[]}
+export interface Warning{type:"POTENTIAL_DELAY"|"MISSING_INFORMATION"|"FOLLOW_UP_DUE"|"DOCUMENT_REQUIRED"|"NO_RECENT_UPDATE";severity:string;rule?:string;rule_id?:string;reason?:string;triggered_at?:string;based_on_event?:string;event_id?:string}
+export interface Grievance{id:string;complaint_id:string;entity_name:string;issue_type:string;issue_description:string;submission_date:string;current_stage:Stage;status_updated_at:string;created_at:string;updated_at:string;warning?:Warning|null;warnings?:Warning[];last_event_at?:string|null}
 export interface GEvent{id:string;grievance_id:string;event_type:string;event_time:string;source:"USER"|"SYSTEM"|"AI"|"ADMIN";description:string;metadata:Record<string,unknown>}
 export type ExtStatus="PENDING"|"PROCESSING"|"COMPLETED"|"PARTIAL"|"FAILED";
 export interface Doc{id:string;file_name:string;document_type:string;uploaded_at:string;extraction_status:ExtStatus;extracted_data?:Record<string,{value:string;confidence:number}>|null;download_url?:string;preview_url?:string}
@@ -8,4 +8,4 @@ export interface NextAction{type:string;title:string;description:string;required
 export interface Explanation{current_situation:string;timeline_summary?:string;warning_explanation?:string;missing_information:string[];next_step_summary:string;generated_at:string}
 export interface Summary{active:number;on_track:number;potentially_delayed:number;resolved:number}
 export interface Notif{id:string;notification_type:"STATUS_CHANGED"|"POTENTIAL_DELAY"|"FOLLOW_UP_DUE"|"DOCUMENT_REQUIRED"|"GRIEVANCE_RESOLVED";title:string;message:string;read:boolean;created_at:string;grievance_id?:string|null;channel?:string}
-export interface Me{name:string;email:string;preferred_language?:string}
+export interface Me{id?:string;name:string;email:string;preferred_language?:string;created_at?:string}
