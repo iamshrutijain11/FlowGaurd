@@ -86,7 +86,7 @@ def create_warning_event(
         "stage": grievance.current_stage.value,
         **(extra or {}),
     }
-    return create_event(
+    event = create_event(
         db,
         grievance.id,
         EventType(warning_type.value),
@@ -96,6 +96,14 @@ def create_warning_event(
         metadata=metadata,
         commit=commit,
     )
+    try:
+        from app.notifications.notifications import create_warning_notification_for_grievance
+        create_warning_notification_for_grievance(
+            db, grievance, warning_type, rule_id, reason, commit=commit
+        )
+    except Exception:
+        pass
+    return event
 
 
 def get_active_warning(grievance: Grievance, events: list[GrievanceEvent]) -> WarningOut | None:

@@ -17,7 +17,11 @@ from typing import TYPE_CHECKING
 
 from app.models.enums import ActionType, GrievanceStage
 from app.services import event_service, grievance_service
-from app.workflow.rules import ALL_RULES
+from app.workflow.rules import (
+    ALL_RULES,
+    rule_missing_acknowledgement_document,
+    user_dependency_open,
+)
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -62,7 +66,11 @@ def evaluate_grievance(db: Session, grievance: Grievance) -> dict:
 
     # Run each rule (each is idempotent — won't duplicate existing warnings)
     errors = []
-    for rule in ALL_RULES:
+    blocked = user_dependency_open(events)
+   # While waiting on the investor, skip time-based delay rules (no blame on the intermediary)
+    rules_to_run = [rule_missing_acknowledgement_document] if blocked else ALL_RULES
+    for rule in rules_to_run:
+    
         try:
             rule(db, grievance, events)
         except Exception as exc:  # pragma: no cover
@@ -82,6 +90,8 @@ def evaluate_grievance(db: Session, grievance: Grievance) -> dict:
         "warnings": warnings,
         "recommended_system_action": action,
         "rule_errors": errors,
+        "delay_attribution": "UNKNOWN" if blocked else None,
+        "blocking_dependency": "USER_DOCUMENT_REQUIRED" if blocked else None,
     }
 
 

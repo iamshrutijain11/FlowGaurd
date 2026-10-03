@@ -154,7 +154,7 @@ def get_fallback_summary(context: Dict[str, Any]) -> Dict[str, str]:
         )
         warning_explanation = (
             f"Internal Workflow Notice: {warning_msg} Note: This indicates a potential workflow delay "
-            f"tracked by FlowGuard, not a confirmed regulatory finding."
+            f"tracked by FlowGuard (demo configuration), not a confirmed regulatory finding."
         )
     else:
         warning_explanation = "No warnings active. The grievance is progressing normally within recorded expectations."
@@ -272,6 +272,130 @@ def summarize_grievance(
                 logger.warning(f"Secondary model retry failed as well: {retry_err}. Using deterministic fallback.")
 
         return get_fallback_summary(context_dict)
+
+
+def get_explanation_for_grievance(db: Any, grievance: Any):
+    """Generates an ExplanationOut response for a real Grievance model instance.
+
+    Assembles the grievance's real attributes, timeline events, documents,
+    active workflow warning, and verified guidance into a ControlledContext,
+    calls summarize_grievance(), and formats into ExplanationOut.
+    """
+    from app.services import event_service
+    from app.ai.guidance_loader import get_guidance
+    from app.schemas.grievance import ExplanationOut
+    from app.utils.time import as_utc, utcnow
+
+    # 1. Grievance dict
+    stage_val = (
+        grievance.current_stage.value
+        if hasattr(grievance.current_stage, "value")
+        else str(grievance.current_stage)
+    )
+    sub_date = (
+        as_utc(grievance.submission_date).isoformat()
+        if getattr(grievance, "submission_date", None)
+        else None
+    )
+    grievance_dict = {
+        "complaint_id": grievance.complaint_id,
+        "entity_name": grievance.entity_name,
+        "entity_type": getattr(grievance, "entity_type", None) or grievance.entity_name,
+        "issue_type": getattr(grievance, "issue_type", None) or "Transaction related grievance",
+        "issue": getattr(grievance, "issue_description", None) or getattr(grievance, "issue_type", None) or "Transaction related grievance",
+        "submission_date": sub_date,
+        "current_stage": stage_val,
+        "status": stage_val,
+    }
+
+    # 2. Events list
+    events = event_service.list_events_for(grievance)
+    events_list = [
+        {
+            "timestamp": as_utc(e.event_time).isoformat() if e.event_time else None,
+            "stage": e.event_type.value if hasattr(e.event_type, "value") else str(e.event_type),
+            "description": e.description,
+            "source": e.source.value if hasattr(e.source, "value") else str(e.source),
+        }
+        for e in events
+    ]
+
+    # 3. Documents list
+    docs = getattr(grievance, "documents", []) or []
+    documents_list = [
+        {
+            "document_id": str(doc.id),
+            "document_type": doc.document_type.value if hasattr(doc.document_type, "value") else str(doc.document_type),
+            "file_name": doc.file_name,
+            "status": doc.extraction_status.value if hasattr(doc.extraction_status, "value") else str(doc.extraction_status),
+            "upload_date": as_utc(doc.uploaded_at).isoformat() if doc.uploaded_at else None,
+        }
+        for doc in docs
+    ]
+
+    # 4. Workflow result
+    active_warning = event_service.get_active_warning(grievance, events)
+    days_elapsed = None
+    if active_warning and getattr(grievance, "status_updated_at", None):
+        delta = utcnow() - as_utc(grievance.status_updated_at)
+        days_elapsed = max(int(delta.total_seconds() / 86400), 0)
+
+    if active_warning:
+        workflow_result = {
+            "is_delayed": True,
+            "warning_type": active_warning.type,
+            "warning_message": active_warning.reason,
+            "days_elapsed": days_elapsed,
+            "current_stage": stage_val,
+        }
+    else:
+        workflow_result = {
+            "is_delayed": False,
+            "warning_type": None,
+            "warning_message": None,
+            "days_elapsed": 0,
+            "current_stage": stage_val,
+        }
+
+    # 5. Verified Guidance
+    verified_guidance = get_guidance(
+        entity_type=grievance.entity_name,
+        stage=stage_val,
+        warning_type=active_warning.type if active_warning else None,
+    )
+
+    # 6. Controlled Context & Summarizer
+    context = build_controlled_context(
+        grievance=grievance_dict,
+        events=events_list,
+        workflow_result=workflow_result,
+        documents=documents_list,
+        verified_guidance=verified_guidance,
+    )
+    summary = summarize_grievance(context)
+
+    # 7. Format into ExplanationOut
+    missing_raw = summary.get("possible_missing_information", "")
+    if isinstance(missing_raw, list):
+        missing_info = [str(x) for x in missing_raw if str(x).strip() and "none identified" not in str(x).lower()]
+    elif isinstance(missing_raw, dict):
+        missing_info = [f"{k}: {v}" for k, v in missing_raw.items()]
+    elif missing_raw and "none identified" not in str(missing_raw).lower():
+        missing_info = [str(missing_raw)]
+    else:
+        missing_info = []
+
+    warning_exp = summary.get("warning_explanation") if active_warning else None
+
+    return ExplanationOut(
+        current_situation=summary.get("current_situation", ""),
+        timeline_summary=summary.get("what_happened", ""),
+        warning_explanation=warning_exp,
+        missing_information=missing_info,
+        next_step_summary=summary.get("next_step_summary", ""),
+        generated_at=utcnow(),
+        is_placeholder=False,
+    )
 
 
 # ============================================================================

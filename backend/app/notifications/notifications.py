@@ -214,6 +214,94 @@ def create_next_action_notification(
     )
 
 
+def create_warning_notification_for_grievance(
+    db: Any,
+    grievance: Any,
+    warning_type: Any,
+    rule_id: str,
+    reason: str,
+    days_elapsed: int = 30,
+    commit: bool = True,
+) -> NotificationItem:
+    """Creates and dispatches a notification when a workflow warning is generated.
+
+    1. Formats a NotificationItem using Person 4's notification generators.
+    2. Dispatches it to Person 4's in-memory notification_service.
+    3. Persists it to the database table `notifications` via app.services.notification_service.
+    """
+    from app.models.enums import NotificationType as DbNotificationType, WarningType
+    from app.services import notification_service as db_notif_service
+
+    wtype_str = warning_type.value if hasattr(warning_type, "value") else str(warning_type)
+    stage_str = (
+        grievance.current_stage.value
+        if hasattr(grievance.current_stage, "value")
+        else str(grievance.current_stage)
+    )
+
+    if wtype_str in (WarningType.POTENTIAL_DELAY.value, "POTENTIAL_DELAY", "response_window_exceeded"):
+        db_type = DbNotificationType.POTENTIAL_DELAY
+        item = create_delay_warning_notification(
+            complaint_id=grievance.complaint_id,
+            entity_name=grievance.entity_name,
+            stage=stage_str,
+            warning_type=wtype_str,
+            days_elapsed=days_elapsed,
+        )
+    elif wtype_str in (WarningType.FOLLOW_UP_DUE.value, "FOLLOW_UP_DUE"):
+        db_type = DbNotificationType.FOLLOW_UP_DUE
+        item = NotificationItem(
+            complaint_id=grievance.complaint_id,
+            type=NotificationType.DELAY_WARNING.value,
+            severity=NotificationSeverity.WARNING.value,
+            title=f"Follow-Up Due: {grievance.complaint_id}",
+            message=reason or f"A follow-up may be appropriate for grievance {grievance.complaint_id}.",
+            stage=stage_str,
+            action_label="Follow-Up Details",
+            action_url=f"/grievances/{grievance.complaint_id}",
+            metadata={"warning_type": wtype_str, "rule_id": rule_id},
+        )
+    elif wtype_str in (WarningType.MISSING_INFORMATION.value, WarningType.DOCUMENT_REQUIRED.value, "MISSING_INFORMATION", "DOCUMENT_REQUIRED"):
+        db_type = DbNotificationType.DOCUMENT_REQUIRED
+        item = create_evidence_reminder_notification(
+            complaint_id=grievance.complaint_id,
+            stage=stage_str,
+            missing_document_labels=["Supporting document / acknowledgement"],
+        )
+    else:
+        db_type = DbNotificationType.POTENTIAL_DELAY
+        item = NotificationItem(
+            complaint_id=grievance.complaint_id,
+            type=NotificationType.DELAY_WARNING.value,
+            severity=NotificationSeverity.WARNING.value,
+            title=f"Workflow Notice: {grievance.complaint_id}",
+            message=reason or f"Workflow notice for grievance {grievance.complaint_id}.",
+            stage=stage_str,
+            action_label="View Details",
+            action_url=f"/grievances/{grievance.complaint_id}",
+            metadata={"warning_type": wtype_str, "rule_id": rule_id},
+        )
+
+    # 1. Dispatch through Person 4's in-memory service
+    notification_service.dispatch(item)
+
+    # 2. Persist in database notifications table so GET /api/v1/notifications includes it
+    try:
+        db_notif_service.create_notification(
+            db,
+            user_id=grievance.user_id,
+            grievance_id=grievance.id,
+            notification_type=db_type,
+            title=item.title,
+            message=item.message,
+            commit=commit,
+        )
+    except Exception as exc:
+        logger.warning(f"Could not persist DB notification: {exc}")
+
+    return item
+
+
 # ---------------------------------------------------------------------------
 # Channel Formatting (Email Demo & SMS Demo)
 # ---------------------------------------------------------------------------

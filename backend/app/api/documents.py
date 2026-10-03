@@ -45,6 +45,8 @@ def upload_document(
         db, user_id=user.id, action="DOCUMENT_UPLOADED", resource_type="document", resource_id=doc.id,
         metadata={"grievance_id": str(g.id), "document_type": document_type.value},
     )
+    from app.ai.extraction import process_document_extraction
+    doc = process_document_extraction(db, doc)
     return ok(document_out(doc), "Document uploaded")
 
 

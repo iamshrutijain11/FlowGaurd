@@ -44,6 +44,7 @@ from app.ai.extraction import (
     ExtractedGrievanceData,
     extract_grievance_data,
     fallback_heuristic_extraction,
+    process_document_extraction,
 )
 
 __all__ = [
@@ -78,4 +79,5 @@ __all__ = [
     "ExtractedGrievanceData",
     "extract_grievance_data",
     "fallback_heuristic_extraction",
+    "process_document_extraction",
 ]

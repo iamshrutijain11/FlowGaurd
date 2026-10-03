@@ -187,6 +187,201 @@ def get_guidance(
     return result
 
 
+def _format_official_guidance_fields(
+    guidance: Dict[str, Any]
+) -> tuple[Optional[str], Optional[str], List[str], Optional[str], Optional[str]]:
+    """Helper to extract and flatten official guidance fields into plain strings and string lists.
+
+    Returns:
+        (official_source, escalation_path, conditions, disclaimer, guidance_notes)
+    """
+    path = guidance.get("escalation_path", "SEBI SCORES 2.0")
+    portal = guidance.get("official_portal", "https://scores.sebi.gov.in")
+    if path and portal:
+        official_source = f"{path} ({portal})"
+    elif portal:
+        official_source = str(portal)
+    elif path:
+        official_source = str(path)
+    else:
+        official_source = None
+
+    escalation_path = str(path) if path else None
+
+    raw_cond = guidance.get("conditions")
+    if isinstance(raw_cond, list):
+        conditions = [str(c) for c in raw_cond if c]
+    elif raw_cond:
+        conditions = [str(raw_cond)]
+    else:
+        conditions = []
+
+    disclaimer = str(guidance.get("disclaimer")) if guidance.get("disclaimer") else None
+    guidance_notes = str(guidance.get("guidance_notes")) if guidance.get("guidance_notes") else None
+
+    return official_source, escalation_path, conditions, disclaimer, guidance_notes
+
+
+def get_next_action_guidance(db: Any, grievance: Any):
+    """Determines the recommended next action enriched with verified regulatory guidance data.
+
+    Returns NextActionOut matching the shared contract:
+    - type: NO_ACTION | FOLLOW_UP | REVIEW_DOCUMENTS | FURTHER_ACTION_AVAILABLE
+    - title: Stage- or warning-aware action title
+    - description: Guidance-informed description
+    - required_documents: Suggested documents from verified guidance
+    - official_source: Official escalation portal / matrix (for FURTHER_ACTION or demo case)
+    - is_placeholder: False
+    """
+    from app.models.enums import ActionType, GrievanceStage, WarningType
+    from app.schemas.grievance import NextActionOut
+    from app.services import event_service
+
+    stage = grievance.current_stage
+    stage_val = stage.value if hasattr(stage, "value") else str(stage)
+
+    # 1. Resolved: always no action
+    if stage_val == "RESOLVED":
+        return NextActionOut(
+            type=ActionType.NO_ACTION.value,
+            title="Grievance resolved",
+            description="This grievance has been marked as resolved. No further action is required. Keep all related documents for your records.",
+            required_documents=[],
+            official_source=None,
+            is_placeholder=False,
+        )
+
+    # 2. Check active warning
+    events = event_service.list_events_for(grievance)
+    warning = event_service.get_active_warning(grievance, events)
+    warning_type_val = warning.type if warning else None
+
+    # Load verified guidance from Person 4 catalogs
+    guidance = get_guidance(
+        entity_type=grievance.entity_name,
+        stage=stage_val,
+        warning_type=warning_type_val,
+    )
+
+    suggested_docs = guidance.get("suggested_documents", [])
+
+    # 3. Determine action type and details
+    if stage_val == "FURTHER_ACTION":
+        action_type = ActionType.FURTHER_ACTION_AVAILABLE.value
+        title = "Further action may be available"
+        description = (
+            f"Your grievance has been escalated. You may proceed through official channels "
+            f"via {guidance.get('escalation_path', 'SEBI SCORES 2.0')}. "
+            f"{guidance.get('recommended_action', '')}"
+        ).strip()
+        required_docs = suggested_docs or [
+            "Complaint reference number",
+            "Acknowledgement document",
+            "Entity's response",
+            "Any supporting correspondence",
+        ]
+        official_source, escalation_path, conditions, disclaimer, guidance_notes = _format_official_guidance_fields(guidance)
+    elif warning:
+        wtype = warning.type
+        if wtype in (WarningType.POTENTIAL_DELAY.value, "POTENTIAL_DELAY", "response_window_exceeded"):
+            action_type = ActionType.FOLLOW_UP.value
+            title = "Follow-up may be appropriate"
+            description = (
+                f"No response has been recorded within FlowGuard's configured monitoring window. "
+                f"A follow-up through the official grievance channel is recommended. "
+                f"{guidance.get('recommended_action', '')}"
+            ).strip()
+            required_docs = suggested_docs or [
+                "Complaint reference number",
+                "Submission date",
+                "Acknowledgement document",
+                "Any prior correspondence",
+            ]
+        elif wtype in (WarningType.FOLLOW_UP_DUE.value, "FOLLOW_UP_DUE"):
+            action_type = ActionType.FOLLOW_UP.value
+            title = "Consider sending a follow-up"
+            description = (
+                f"Some time has passed without a recorded response. "
+                f"Consider checking the status with {grievance.entity_name}. "
+                f"{guidance.get('recommended_action', '')}"
+            ).strip()
+            required_docs = suggested_docs or [
+                "Complaint reference number",
+                "Acknowledgement document",
+            ]
+        elif wtype in (WarningType.MISSING_INFORMATION.value, WarningType.DOCUMENT_REQUIRED.value, "MISSING_INFORMATION", "DOCUMENT_REQUIRED"):
+            action_type = ActionType.REVIEW_DOCUMENTS.value
+            title = "Complete your grievance record"
+            description = (
+                "FlowGuard detected that some information or documents supporting your grievance record "
+                "have not yet been uploaded. Uploading them helps keep your case file complete."
+            )
+            required_docs = suggested_docs or [
+                "Acknowledgement document",
+                "Any supporting evidence",
+            ]
+        else:
+            action_type = ActionType.NO_ACTION.value
+            title = "No action needed right now"
+            description = guidance.get("status_explanation", "Your grievance is being monitored by FlowGuard.")
+            required_docs = suggested_docs
+
+        # Only demo case CMP-2026-DEMO-001 includes official_source while in FOLLOW_UP
+        if getattr(grievance, "complaint_id", "") == "CMP-2026-DEMO-001":
+            official_source, escalation_path, conditions, disclaimer, guidance_notes = _format_official_guidance_fields(guidance)
+        else:
+            official_source = None
+            escalation_path = None
+            conditions = []
+            disclaimer = None
+            guidance_notes = None
+    elif stage_val == "RESPONSE_RECEIVED":
+        action_type = ActionType.REVIEW_DOCUMENTS.value
+        title = "Review the response"
+        description = (
+            f"A response has been recorded from {grievance.entity_name}. "
+            f"Review it carefully to determine if you are satisfied with the outcome. "
+            f"{guidance.get('recommended_action', '')}"
+        ).strip()
+        required_docs = suggested_docs or [
+            "Complaint reference number",
+            "Acknowledgement document",
+            "Entity's response",
+        ]
+        official_source = None
+        escalation_path = None
+        conditions = []
+        disclaimer = None
+        guidance_notes = None
+    else:
+        # FILED, ACKNOWLEDGED, AWAITING_RESPONSE without warnings
+        action_type = ActionType.NO_ACTION.value
+        title = "Wait for entity progress" if stage_val != "FILED" else "Wait for acknowledgement"
+        description = guidance.get("recommended_action") or "Your grievance is progressing within FlowGuard's configured monitoring window."
+        required_docs = suggested_docs
+        official_source = None
+        escalation_path = None
+        conditions = []
+        disclaimer = None
+        guidance_notes = None
+
+    # Ensure required_documents is strictly a list of strings
+    clean_required_docs = [str(d) for d in required_docs if d]
+
+    return NextActionOut(
+        type=action_type,
+        title=title,
+        description=description,
+        required_documents=clean_required_docs,
+        official_source=official_source,
+        escalation_path=escalation_path,
+        conditions=conditions,
+        disclaimer=disclaimer,
+        guidance_notes=guidance_notes,
+        is_placeholder=False,
+    )
+
+
 # ============================================================================
 # STANDALONE TEST
 # ============================================================================

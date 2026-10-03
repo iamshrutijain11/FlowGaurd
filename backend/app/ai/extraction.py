@@ -337,6 +337,90 @@ SEBI Reg. No. INZ000000000
 """
 
 
+def extract_text_from_file_bytes(content: bytes, filename: str = "") -> str:
+    """Extracts text from uploaded PDF or document bytes.
+    Handles plain text, PDF text streams, flate-compressed streams, and printable strings.
+    """
+    import zlib
+    if not content or len(content) < 20:
+        return ""
+
+    # 1. Try direct UTF-8 decode
+    try:
+        decoded = content.decode("utf-8")
+        words = re.findall(r"[A-Za-z0-9_-]{3,}", decoded)
+        if len(words) >= 5:
+            return decoded
+    except Exception:
+        pass
+
+    # 2. If PDF, extract stream blocks and text operators
+    if content.startswith(b"%PDF"):
+        text_parts = []
+        for stream_match in re.finditer(rb"stream[\r\n]+(.*?)[\r\n]+endstream", content, re.DOTALL):
+            stream_data = stream_match.group(1)
+            try:
+                decompressed = zlib.decompress(stream_data)
+            except Exception:
+                decompressed = stream_data
+            strings = re.findall(rb"\((.*?)\)\s*T[jJ]", decompressed)
+            for s in strings:
+                try:
+                    text_parts.append(s.decode("latin-1"))
+                except Exception:
+                    pass
+        if text_parts:
+            return " ".join(text_parts)
+
+    # 3. Fallback: extract ASCII printable string chunks >= 4 characters
+    printable = re.findall(rb"[\x20-\x7E\r\n\t]{4,}", content)
+    if printable:
+        extracted = " ".join(p.decode("latin-1", errors="ignore") for p in printable)
+        words = re.findall(r"[A-Za-z0-9_-]{3,}", extracted)
+        if len(words) >= 5:
+            return extracted
+
+    return ""
+
+
+def process_document_extraction(db: Any, document: Any) -> Any:
+    """Runs AI document extraction on an uploaded document and stores the result.
+
+    Extracts text from the stored file, runs extract_grievance_data(),
+    and updates document.extraction_status to COMPLETED
+    and document.extracted_data to the structured suggestion dictionary.
+    """
+    from app.services import document_service
+    from app.models.enums import ExtractionStatus
+
+    # Get file path
+    file_path = document_service.upload_root() / document.storage_path
+    if not file_path.is_file():
+        logger.warning(f"Document file not found: {file_path}")
+        document_service.update_extraction_result(
+            db, document.id, status=ExtractionStatus.FAILED, data=None
+        )
+        return document
+
+    content = file_path.read_bytes()
+    text = extract_text_from_file_bytes(content, document.file_name)
+
+    # If the file has no extractable text (e.g. 15-byte dummy test PDF), keep as PENDING
+    if not text or len(text.strip()) < 20:
+        return document
+
+    # Run extraction
+    extracted = extract_grievance_data(text)
+
+    # Save extraction result in document
+    document_service.update_extraction_result(
+        db, document.id, status=ExtractionStatus.COMPLETED, data=extracted
+    )
+    document.extraction_status = ExtractionStatus.COMPLETED
+    document.extracted_data_json = extracted
+    return document
+
+
 # ============================================================================
 # STANDALONE TEST
 # ============================================================================
