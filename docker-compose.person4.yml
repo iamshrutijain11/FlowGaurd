@@ -1,0 +1,77 @@
+services:
+  # =========================================================================
+  # FlowGuard Backend API Service (Person 2 & Person 4)
+  # =========================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: flowguard_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=postgresql://flowguard:flowguard_password@db:5432/flowguard_db
+      - LLM_MODEL=gemini-3.8-flash
+      - PYTHONPATH=/app
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - flowguard_network
+
+  # =========================================================================
+  # PostgreSQL Database Service (Person 2)
+  # =========================================================================
+  db:
+    image: postgres:16-alpine
+    container_name: flowguard_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flowguard
+      POSTGRES_PASSWORD: flowguard_password
+      POSTGRES_DB: flowguard_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowguard -d flowguard_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flowguard_network
+
+  # =========================================================================
+  # Next.js Frontend Service (Person 1 - Investor Experience)
+  # TODO (Person 1 Integration): Uncomment when Next.js directory is created
+  # =========================================================================
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: flowguard_frontend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - NEXT_PUBLIC_API_URL=http://localhost:8000
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - flowguard_network
+
+volumes:
+  postgres_data:
+    name: flowguard_postgres_data
+
+networks:
+  flowguard_network:
+    name: flowguard_network
+    driver: bridge
