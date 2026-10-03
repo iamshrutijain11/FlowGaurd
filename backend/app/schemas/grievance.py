@@ -98,10 +98,56 @@ class NextActionOut(BaseModel):
     title: str
     description: str
     required_documents: list[str] = []
-    official_source: dict[str, Any] | None = Field(
-        default=None, description="Verified official guidance source; null until verified guidance is wired in."
+    official_source: str | None = Field(
+        default=None, description="Verified official guidance source (string name and URL or null)."
     )
+    escalation_path: str | None = None
+    conditions: list[str] = []
+    disclaimer: str | None = None
+    guidance_notes: str | None = None
     is_placeholder: bool = True
+
+    @field_validator("official_source", mode="before")
+    @classmethod
+    def _coerce_official_source(cls, v: Any) -> str | None:
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            portal = v.get("official_portal")
+            path = v.get("escalation_path")
+            if path and portal:
+                return f"{path} ({portal})"
+            return portal or path or str(v)
+        return str(v)
+
+    @field_validator("conditions", mode="before")
+    @classmethod
+    def _coerce_conditions(cls, v: Any) -> list[str]:
+        if not v:
+            return []
+        if isinstance(v, str):
+            return [v]
+        if isinstance(v, list):
+            return [str(x) for x in v if x]
+        return [str(v)]
+
+    @field_validator("required_documents", mode="before")
+    @classmethod
+    def _coerce_required_docs(cls, v: Any) -> list[str]:
+        if not v:
+            return []
+        if isinstance(v, list):
+            return [str(x) for x in v if x]
+        return [str(v)]
+
+    @field_validator("escalation_path", "disclaimer", "guidance_notes", mode="before")
+    @classmethod
+    def _coerce_str_or_none(cls, v: Any) -> str | None:
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            return ", ".join(f"{k}: {val}" for k, val in v.items())
+        return str(v)
 
 
 class ExplanationOut(BaseModel):
@@ -112,3 +158,32 @@ class ExplanationOut(BaseModel):
     next_step_summary: str
     generated_at: datetime
     is_placeholder: bool = True
+
+    @field_validator("missing_information", mode="before")
+    @classmethod
+    def _coerce_missing_info(cls, v: Any) -> list[str]:
+        if not v:
+            return []
+        if isinstance(v, list):
+            return [str(x) for x in v if x]
+        if isinstance(v, dict):
+            return [f"{k}: {val}" for k, val in v.items()]
+        return [str(v)]
+
+    @field_validator("current_situation", "timeline_summary", "next_step_summary", mode="before")
+    @classmethod
+    def _coerce_string(cls, v: Any) -> str:
+        if v is None:
+            return ""
+        if isinstance(v, (dict, list)):
+            return str(v)
+        return str(v)
+
+    @field_validator("warning_explanation", mode="before")
+    @classmethod
+    def _coerce_warning_exp(cls, v: Any) -> str | None:
+        if v is None:
+            return None
+        if isinstance(v, (dict, list)):
+            return str(v)
+        return str(v)

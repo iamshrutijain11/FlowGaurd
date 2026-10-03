@@ -13,3 +13,9 @@ apscheduler>=3.10
 # testing
 pytest>=8.0
 httpx2>=0.28
+google-genai
+python-dotenv
+google-genai
+python-dotenv
+google-genai
+python-dotenv

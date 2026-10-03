@@ -1,0 +1,116 @@
+{
+  "entity_type": "stock_broker",
+  "display_name": "Stock Broker / Trading Member",
+  "description": "Registered intermediary providing securities trading and broking services under SEBI regulations.",
+  "stages": {
+    "FILED": {
+      "stage_name": "FILED",
+      "status_explanation": "Your complaint has been submitted to the broker. At this point, the broker's system logs your issue.",
+      "recommended_action": "Check your email/SMS or broker portal for a complaint acknowledgement number or ticket ID. Save this reference carefully.",
+      "suggested_documents": [
+        "Copy of original complaint submitted (may be useful for your grievance record)",
+        "Order book / contract note / trade confirmation copy if applicable"
+      ],
+      "escalation_path": "Broker Customer Support / Grievance Redressal Officer (GRO)",
+      "official_portal": "Broker online grievance portal / email",
+      "conditions": "Initial stage. Intermediary acknowledgement is awaited.",
+      "guidance_notes": "Every SEBI-registered broker is required to maintain a designated investor grievance email address and redressal mechanism.",
+      "disclaimer": "Official regulatory process information. Any simulated time windows are demo configurations for testing."
+    },
+    "ACKNOWLEDGED": {
+      "stage_name": "ACKNOWLEDGED",
+      "status_explanation": "The broker has officially acknowledged receipt of your complaint and assigned an acknowledgement/ticket reference.",
+      "recommended_action": "Note the ticket reference number. Upload or retain the acknowledgement receipt in your FlowGuard record.",
+      "suggested_documents": [
+        "Broker acknowledgement receipt / email confirmation (may be useful for your grievance record)",
+        "Copy of original complaint (may be useful for your grievance record)"
+      ],
+      "escalation_path": "Broker Grievance Redressal Officer (GRO)",
+      "official_portal": "Broker official support portal",
+      "conditions": "Complaint acknowledged. Intermediary is expected to investigate and respond.",
+      "guidance_notes": "Brokers typically review records and transaction logs internally before providing a formal resolution.",
+      "disclaimer": "Official regulatory process information. Any simulated time windows are demo configurations for testing."
+    },
+    "AWAITING_RESPONSE": {
+      "stage_name": "AWAITING_RESPONSE",
+      "status_explanation": "Your complaint is currently pending response or resolution from the stock broker.",
+      "recommended_action": "Monitor for updates from the broker. Keep your transaction statement and acknowledgement receipt ready in case the response is delayed.",
+      "suggested_documents": [
+        "Broker acknowledgement receipt (may be useful for your grievance record)",
+        "Account / transaction statement reflecting disputed transaction (may be useful for your grievance record)",
+        "Copy of original complaint (may be useful for your grievance record)"
+      ],
+      "escalation_path": "SEBI SCORES 2.0 / SMART ODR Portal",
+      "official_portal": "https://scores.sebi.gov.in",
+      "conditions": "If the broker does not respond or resolve the issue within the configured response window (e.g. 30-day demo configuration), escalation may be initiated.",
+      "guidance_notes": "If the intermediary fails to respond within the expected window, investors can escalate to the Stock Exchange (NSE/BSE) or SEBI SCORES 2.0.",
+      "disclaimer": "Internal warning timestamps and time windows are demo configurations for simulation purposes, not statutory regulatory deadlines."
+    },
+    "RESPONSE_RECEIVED": {
+      "stage_name": "RESPONSE_RECEIVED",
+      "status_explanation": "The stock broker has sent a formal response or proposed resolution for your complaint.",
+      "recommended_action": "Review the response carefully. If satisfied, you can mark the case as resolved. If dissatisfied, you may seek further action or escalation.",
+      "suggested_documents": [
+        "Broker response letter / email (may be useful for your grievance record)",
+        "Broker acknowledgement receipt (may be useful for your grievance record)",
+        "Account / transaction statement (may be useful for your grievance record)"
+      ],
+      "escalation_path": "Stock Exchange Investor Grievance Cell (NSE / BSE) or SEBI SCORES 2.0",
+      "official_portal": "https://scores.sebi.gov.in",
+      "conditions": "If the response is unsatisfactory or incomplete, escalation to Stock Exchange or SCORES is available.",
+      "guidance_notes": "Carefully assess whether the broker addressed all points in your original complaint before closing the matter.",
+      "disclaimer": "Official regulatory process information. Any simulated time windows are demo configurations for testing."
+    },
+    "RESOLVED": {
+      "stage_name": "RESOLVED",
+      "status_explanation": "The complaint has been addressed and marked resolved.",
+      "recommended_action": "Verify that any required credits, reversals, or corrections reflect accurately in your ledger or Demat account.",
+      "suggested_documents": [
+        "Final resolution confirmation from broker (may be useful for your personal records)",
+        "Updated account statement confirming credit or resolution (may be useful for your personal records)"
+      ],
+      "escalation_path": "None required unless resolution is not honored",
+      "official_portal": "Broker official support portal",
+      "conditions": "Complaint resolved to the investor's satisfaction.",
+      "guidance_notes": "Keep copies of resolution letters for your annual financial and tax records.",
+      "disclaimer": "Official regulatory process information."
+    },
+    "FURTHER_ACTION": {
+      "stage_name": "FURTHER_ACTION",
+      "status_explanation": "The complaint requires escalation to an official external grievance redressal mechanism.",
+      "recommended_action": "Prepare your grievance file (ticket ID, acknowledgement, transaction statements) and file an escalation on SEBI SCORES 2.0 or SMART ODR portal.",
+      "suggested_documents": [
+        "Broker acknowledgement receipt (may be useful for your grievance record)",
+        "Account / transaction statement reflecting disputed transactions (may be useful for your grievance record)",
+        "Copy of original complaint (may be useful for your grievance record)",
+        "Broker response letter if received (may be useful for your grievance record)",
+        "Escalation filing receipt from SCORES / SMART ODR once submitted (may be useful for your grievance record)"
+      ],
+      "escalation_path": "SEBI SCORES 2.0 / SMART ODR Portal",
+      "official_portal": "https://scores.sebi.gov.in",
+      "conditions": "Applicable when the broker response is overdue (e.g. 30-day demo configuration lapsed) or when the broker's response is rejected by the investor.",
+      "guidance_notes": "Under SEBI regulations, unresolved investor grievances against brokers can be escalated through the 2-tier SCORES system and online dispute resolution (SMART ODR).",
+      "disclaimer": "Official regulatory process information. Any simulated time windows are demo configurations for testing."
+    }
+  },
+  "warning_guidance": {
+    "response_window_exceeded": {
+      "title": "Response Window Exceeded Notice",
+      "explanation": "FlowGuard detected that the recorded elapsed time exceeds the configured window (e.g., 30-day demo configuration) with no broker response recorded.",
+      "recommended_step": "You may prepare to escalate to SEBI SCORES 2.0 or the SMART ODR portal using your complaint reference and acknowledgement receipt.",
+      "portal": "https://scores.sebi.gov.in"
+    },
+    "potential_delay": {
+      "title": "Potential Delay Notice",
+      "explanation": "Progress on this complaint appears slower than the configured benchmark.",
+      "recommended_step": "Send a polite follow-up inquiry to the broker's Grievance Redressal Officer citing your reference number.",
+      "portal": "Broker support portal"
+    },
+    "awaiting_response": {
+      "title": "Awaiting Response Notice",
+      "explanation": "Complaint is within the expected response window and awaiting intermediary action.",
+      "recommended_step": "No action needed at this time. FlowGuard will monitor the timeline.",
+      "portal": "Broker support portal"
+    }
+  }
+}

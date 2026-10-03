@@ -3,12 +3,13 @@ import uuid
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.ai.guidance_loader import get_next_action_guidance
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.enums import GrievanceStage
 from app.models.user import User
 from app.schemas.common import ERROR_RESPONSES, ApiResponse, ErrorResponse, ok
-from app.schemas.grievance import GrievanceCreate, GrievanceOut, GrievanceUpdate
+from app.schemas.grievance import GrievanceCreate, GrievanceOut, GrievanceUpdate, NextActionOut
 from app.services import audit_service, grievance_service
 
 router = APIRouter(prefix="/grievances", tags=["Grievances"])
@@ -81,3 +82,15 @@ def update_grievance(
         metadata={"fields": list(body.model_dump(exclude_unset=True).keys())},
     )
     return ok(grievance_service.grievance_out(g), "Grievance updated")
+
+
+@router.get(
+    "/{grievance_id}/next-action",
+    response_model=ApiResponse[NextActionOut],
+    summary="Recommended next step",
+    description="Action category and verified next-action guidance from FlowGuard regulatory catalogs.",
+    responses={401: ERROR_RESPONSES[401], 404: ERROR_RESPONSES[404]},
+)
+def next_action(grievance_id: uuid.UUID, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    g = grievance_service.get_owned_grievance(db, grievance_id, user)
+    return ok(get_next_action_guidance(db, g))
