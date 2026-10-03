@@ -1,0 +1,47 @@
+{
+  "matrix_name": "Indian Securities Market Investor Grievance Escalation Framework",
+  "regulatory_framework": "SEBI Investor Grievance Redressal Mechanism & Online Dispute Resolution (SMART ODR)",
+  "disclaimer": "This escalation matrix outlines verified official grievance pathways under Indian securities market norms. Internal deadlines or elapsed windows tracked by FlowGuard are demo configurations for simulation purposes and not statutory determinations.",
+  "tiers": [
+    {
+      "tier": 1,
+      "level_name": "Intermediary Level",
+      "entity_description": "First point of complaint - Broker, Depository Participant, or Mutual Fund AMC",
+      "action": "File grievance directly with the intermediary's online portal or designated grievance email.",
+      "channels": ["Broker Support", "DP Grievance Cell", "AMC Customer Care"],
+      "expected_outcome": "Acknowledgement with ticket ID, followed by internal investigation and written response.",
+      "notes": "Always preserve the acknowledgement receipt and complaint reference ID."
+    },
+    {
+      "tier": 2,
+      "level_name": "Market Infrastructure Institution (MII) Level",
+      "entity_description": "Stock Exchanges (NSE, BSE, MCX) and Depositories (CDSL, NSDL)",
+      "action": "If the intermediary fails to respond or gives an unsatisfactory response, approach the relevant MII's Investor Grievance Cell.",
+      "channels": [
+        "NSE Investor Grievance (https://www.nseindia.com/invest/investor-grievances)",
+        "BSE Investor Services (https://www.bseindia.com/investors/invservices.aspx)",
+        "CDSL / NSDL Grievance Cells"
+      ],
+      "expected_outcome": "Exchange/Depository facilitates conciliation between investor and member.",
+      "notes": "MIIs maintain Investor Service Centres (ISCs) across India."
+    },
+    {
+      "tier": 3,
+      "level_name": "Regulatory Level - SEBI SCORES 2.0",
+      "entity_description": "Securities and Exchange Board of India (SEBI) centralized grievance system",
+      "action": "Lodge an online complaint on SEBI SCORES 2.0 if the complaint remains unresolved.",
+      "channels": ["SEBI SCORES 2.0 (https://scores.sebi.gov.in)", "SEBI Toll-Free Helpline: 1800 266 7575 / 1800 22 7575"],
+      "expected_outcome": "Automated 2-tier routing with designated Action Taken Report (ATR) tracking.",
+      "notes": "Mandatory requirement: Investor must have first approached the intermediary."
+    },
+    {
+      "tier": 4,
+      "level_name": "Online Dispute Resolution (ODR) - SMART ODR Portal",
+      "entity_description": "Independent conciliation and arbitration through SEBI-recognized ODR institutions",
+      "action": "Initiate dispute resolution on SMART ODR if grievance remains unresolved after Tier 1 / Tier 2.",
+      "channels": ["SMART ODR Portal (https://smartodr.in)"],
+      "expected_outcome": "Conciliation by neutral conciliator; if unresolved, online arbitration by independent arbitrator.",
+      "notes": "Fully digital, multi-lingual, and binding under Indian Arbitration & Conciliation Act."
+    }
+  ]
+}
