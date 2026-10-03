@@ -37,7 +37,7 @@ _CONFIG_PATH = Path(__file__).parent / "config" / "demo_rules.json"
 
 def _load_rules() -> dict:
     try:
-        return json.loads(_CONFIG_PATH.read_text())
+        return json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
     except Exception as exc:  # pragma: no cover
         logger.warning("Could not load demo_rules.json: %s. Using defaults.", exc)
         return {}
@@ -81,6 +81,14 @@ def _get_stage_event(events: list[GrievanceEvent], stage: GrievanceStage):
     matching = [e for e in events if e.event_type.value == stage.value]
     return max(matching, key=lambda e: as_utc(e.event_time)) if matching else None
 
+def user_dependency_open(events: list[GrievanceEvent]) -> bool:
+    """True if the latest dependency marker says FlowGuard is waiting on the investor."""
+    state = None
+    for e in sorted(events, key=lambda e: as_utc(e.event_time)):
+        dep = (e.metadata_json or {}).get("dependency")
+        if dep in ("USER_INFORMATION_REQUESTED", "USER_INFORMATION_PROVIDED"):
+           state = dep
+    return state == "USER_INFORMATION_REQUESTED"
 
 # ── Rule 1: No acknowledgement received after filing ──────────────────────────
 
