@@ -1,0 +1,26 @@
+{
+  "_comment": "Demo seed data used on startup when SEED_DEMO_DATA=true",
+  "user": {
+    "email": "demo@flowguard.app",
+    "password": "Demo@12345",
+    "name": "Demo Investor",
+    "preferred_language": "en"
+  },
+  "grievance": {
+    "complaint_id": "CMP-2026-DEMO-001",
+    "entity_name": "Demo Brokerage Pvt Ltd",
+    "issue_type": "Transaction related grievance",
+    "current_stage": "AWAITING_RESPONSE",
+    "warning": null
+  },
+  "timeline": [
+    { "event_type": "FILED",             "event_time": "2026-09-20T10:00:00Z", "source": "USER"   },
+    { "event_type": "ACKNOWLEDGED",      "event_time": "2026-09-20T12:00:00Z", "source": "USER"   },
+    { "event_type": "AWAITING_RESPONSE", "event_time": "2026-09-21T09:00:00Z", "source": "SYSTEM" }
+  ],
+  "document": {
+    "file_name": "Acknowledgement.pdf",
+    "document_type": "ACKNOWLEDGEMENT",
+    "extraction_status": "PENDING"
+  }
+}

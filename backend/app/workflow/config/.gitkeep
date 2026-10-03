@@ -1,0 +1,2 @@
+# workflow/config/ – YAML / JSON rule thresholds go here
+# e.g. windows.yaml: awaiting_response_days: 30
