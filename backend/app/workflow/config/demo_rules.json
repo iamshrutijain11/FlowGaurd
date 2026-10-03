@@ -1,0 +1,28 @@
+{
+  "_comment": "DEMO CONFIGURATION — these windows are for hackathon simulation only. They are NOT real regulatory deadlines.",
+  "FILED": {
+    "reminder_after_days": 2,
+    "warning_after_days": 4,
+    "rule_id": "DEMO_FILED_WINDOW"
+  },
+  "ACKNOWLEDGED": {
+    "reminder_after_days": 1,
+    "warning_after_days": 3,
+    "rule_id": "DEMO_ACKNOWLEDGED_WINDOW"
+  },
+  "AWAITING_RESPONSE": {
+    "reminder_after_days": 3,
+    "warning_after_days": 5,
+    "rule_id": "DEMO_AWAITING_RESPONSE_WINDOW"
+  },
+  "RESPONSE_RECEIVED": {
+    "reminder_after_days": 5,
+    "warning_after_days": 10,
+    "rule_id": "DEMO_RESPONSE_RECEIVED_WINDOW"
+  },
+  "FURTHER_ACTION": {
+    "reminder_after_days": 3,
+    "warning_after_days": 7,
+    "rule_id": "DEMO_FURTHER_ACTION_WINDOW"
+  }
+}

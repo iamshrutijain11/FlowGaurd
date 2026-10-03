@@ -41,7 +41,40 @@ async def lifespan(app: FastAPI):
 
         with SessionLocal() as db:
             seed_demo_data(db)
+
+    # ── Workflow scheduler ────────────────────────────────────────────────────
+    # Evaluates ALL active grievances against delay/warning rules every hour.
+    # Also runs once immediately on startup so any existing grievance gets
+    # evaluated without waiting for the first interval.
+    scheduler = None
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        from app.workflow.engine import run_all_checks
+
+        def _run_checks():
+            with SessionLocal() as db:
+                try:
+                    run_all_checks(db)
+                except Exception:
+                    logger.exception("Scheduled grievance check failed")
+
+        scheduler = BackgroundScheduler(job_defaults={"max_instances": 1})
+        scheduler.add_job(_run_checks, "interval", hours=1, id="grievance_checks")
+        scheduler.start()
+        _run_checks()  # immediate first run on startup
+        logger.info("Workflow scheduler started — grievances evaluated every 1 hour.")
+    except ImportError:
+        logger.warning(
+            "APScheduler not installed — workflow engine will not run automatically. "
+            "Install apscheduler or call run_all_checks(db) manually."
+        )
+    except Exception:
+        logger.exception("Workflow scheduler failed to start — continuing without it.")
+
     yield
+
+    if scheduler is not None:
+        scheduler.shutdown(wait=False)
 
 
 app = FastAPI(
