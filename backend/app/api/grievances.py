@@ -55,7 +55,7 @@ def list_grievances(
     description="Returns one grievance owned by the current user.",
     responses={401: ERROR_RESPONSES[401], 404: ERROR_RESPONSES[404]},
 )
-def get_grievance(grievance_id: uuid.UUID, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def get_grievance(grievance_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     g = grievance_service.get_owned_grievance(db, grievance_id, user)
     return ok(grievance_service.grievance_out(g))
 
@@ -72,7 +72,7 @@ def get_grievance(grievance_id: uuid.UUID, db: Session = Depends(get_db), user: 
     responses={409: {"model": ErrorResponse, "description": "INVALID_STAGE_TRANSITION"}, 401: ERROR_RESPONSES[401], 404: ERROR_RESPONSES[404], 422: ERROR_RESPONSES[422]},
 )
 def update_grievance(
-    grievance_id: uuid.UUID, body: GrievanceUpdate,
+    grievance_id: str, body: GrievanceUpdate,
     db: Session = Depends(get_db), user: User = Depends(get_current_user),
 ):
     g = grievance_service.get_owned_grievance(db, grievance_id, user)
@@ -91,6 +91,6 @@ def update_grievance(
     description="Action category and verified next-action guidance from FlowGuard regulatory catalogs.",
     responses={401: ERROR_RESPONSES[401], 404: ERROR_RESPONSES[404]},
 )
-def next_action(grievance_id: uuid.UUID, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def next_action(grievance_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     g = grievance_service.get_owned_grievance(db, grievance_id, user)
     return ok(get_next_action_guidance(db, g))

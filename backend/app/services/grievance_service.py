@@ -116,13 +116,37 @@ def create_grievance(db: Session, user: User, data: GrievanceCreate) -> Grievanc
     return grievance
 
 
-def get_grievance(db: Session, grievance_id: uuid.UUID) -> Grievance | None:
+def get_grievance(db: Session, grievance_id: uuid.UUID | str) -> Grievance | None:
     """Unscoped lookup for internal callers (workflow/AI). API routes use get_owned_grievance."""
-    return db.get(Grievance, grievance_id)
+    if isinstance(grievance_id, uuid.UUID):
+        return db.get(Grievance, grievance_id)
+    try:
+        val = uuid.UUID(str(grievance_id))
+        g = db.get(Grievance, val)
+        if g:
+            return g
+    except (ValueError, AttributeError):
+        pass
+    return db.scalar(select(Grievance).where(Grievance.complaint_id == str(grievance_id)))
 
 
-def get_owned_grievance(db: Session, grievance_id: uuid.UUID, user: User) -> Grievance:
-    g = db.get(Grievance, grievance_id)
+def get_owned_grievance(db: Session, grievance_id: uuid.UUID | str, user: User) -> Grievance:
+    g = None
+    if isinstance(grievance_id, uuid.UUID):
+        g = db.get(Grievance, grievance_id)
+    else:
+        try:
+            val = uuid.UUID(str(grievance_id))
+            g = db.get(Grievance, val)
+        except (ValueError, AttributeError):
+            g = None
+        if not g:
+            g = db.scalar(
+                select(Grievance).where(
+                    Grievance.user_id == user.id,
+                    Grievance.complaint_id == str(grievance_id),
+                )
+            )
     if not g or g.user_id != user.id:  # same error for both: don't reveal other users' IDs
         raise AppError("GRIEVANCE_NOT_FOUND", "Grievance not found", 404)
     return g

@@ -33,7 +33,7 @@ _UPLOAD_ERRORS = {
     responses=_UPLOAD_ERRORS,
 )
 def upload_document(
-    grievance_id: uuid.UUID,
+    grievance_id: str,
     file: UploadFile = File(...),
     document_type: DocumentType = Form(DocumentType.OTHER),
     db: Session = Depends(get_db),
@@ -57,7 +57,7 @@ def upload_document(
     description="Includes `extraction_status` and (once available) AI-extracted `extracted_data`, which are unconfirmed suggestions.",
     responses={401: ERROR_RESPONSES[401], 404: ERROR_RESPONSES[404]},
 )
-def list_documents(grievance_id: uuid.UUID, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def list_documents(grievance_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     g = grievance_service.get_owned_grievance(db, grievance_id, user)
     return ok([document_out(d) for d in document_service.list_documents(g)])
 
