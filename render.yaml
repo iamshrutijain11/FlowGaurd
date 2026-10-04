@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: flowguard-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////app/data/flowguard.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
+      - key: ALLOWED_ORIGINS
+        value: https://flowguard.vercel.app
+      - key: AUTO_CREATE_TABLES
+        value: "true"
+      - key: SEED_DEMO_DATA
+        value: "true"
+      - key: UPLOAD_DIR
+        value: /app/uploads
+      - key: MAX_UPLOAD_MB
+        value: "10"
+      - key: LLM_API_KEY
+        sync: false
