@@ -2,7 +2,8 @@
 
 AI-powered investor grievance tracking and escalation assistant (SANGYAN Investor Resilience Hackathon, Track B).
 
-🚀 **Live Demo:** [http://flow-gaurd-amber.vercel.app](http://flow-gaurd-amber.vercel.app)
+🚀 **Live Demo:** [http://flow-gaurd-amber.vercel.app](http://flow-gaurd-amber.vercel.app)  
+🔧 **Backend API:** [https://flowguard-backend-976l.onrender.com](https://flowguard-backend-976l.onrender.com)
 
 FlowGuard shows an investor where their grievance stands, what has happened so far, whether a potential delay was detected, what information may be missing, and what legitimate next step is available. It is not a stock advisory tool: no buy/sell recommendations, no price predictions, no invented regulatory deadlines.
 
@@ -62,6 +63,9 @@ uvicorn app.main:app --reload
 ```
 
 API docs: http://localhost:8000/docs  Health check: http://localhost:8000/health
+
+> **Deployed API docs:** https://flowguard-backend-976l.onrender.com/docs  
+> **Deployed health check:** https://flowguard-backend-976l.onrender.com/health
 
 Tests: `pytest`
 
