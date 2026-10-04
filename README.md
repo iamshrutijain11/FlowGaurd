@@ -97,7 +97,7 @@ Demo path: dashboard, open the grievance, pipeline (Awaiting Response), potentia
 docker-compose up --build
 ```
 
-Set `JWT_SECRET` and `LLM_API_KEY` in your environment first. `docker-compose.person4.yml` is an additional compose file for the AI and notification services.
+Set JWT_SECRET and LLM_API_KEY in your environment first, and make sure backend/.env exists. docker-compose.person4.yml is an alternative full-stack compose file (backend + PostgreSQL) that reads backend/.env.
 
 ## Team
 
