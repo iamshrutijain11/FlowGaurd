@@ -2,6 +2,8 @@
 
 AI-powered investor grievance tracking and escalation assistant (SANGYAN Investor Resilience Hackathon, Track B).
 
+🚀 **Live Demo:** [http://flow-gaurd-amber.vercel.app](http://flow-gaurd-amber.vercel.app)
+
 FlowGuard shows an investor where their grievance stands, what has happened so far, whether a potential delay was detected, what information may be missing, and what legitimate next step is available. It is not a stock advisory tool: no buy/sell recommendations, no price predictions, no invented regulatory deadlines.
 
 The product keeps four kinds of information separate:
